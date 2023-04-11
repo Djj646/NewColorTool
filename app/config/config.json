@@ -1,0 +1,18 @@
+{
+    "Material": {
+        "AcrylicBlurRadius": 21
+    },
+    "Update": {
+        "CheckUpdateAtStartUp": true
+    },
+    "MainWindow": {
+        "DpiScale": "Auto"
+    },
+    "Folders": {
+        "Output": "D:/VSCodeProjects/NewColorTool/app/output"
+    },
+    "QFluentWidgets": {
+        "ThemeColor": "#4aa7aa",
+        "ThemeMode": "Light"
+    }
+}
