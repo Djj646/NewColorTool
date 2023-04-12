@@ -12,10 +12,8 @@ from ..common.config import cfg, FEEDBACK_URL, HELP_URL, EXAMPLE_URL
 class ToolBar(QWidget):
     """ Tool bar """
 
-    def __init__(self, title, subtitle, parent=None):
+    def __init__(self, parent=None):
         super().__init__(parent=parent)
-        self.titleLabel = QLabel(title, self)
-        self.subtitleLabel = QLabel(subtitle, self)
 
         self.documentButton = PushButton(
             self.tr('文档'), self, Icon.DOCUMENT)
@@ -28,12 +26,9 @@ class ToolBar(QWidget):
         self.__initWidget()
 
     def __initWidget(self):
-        self.setFixedHeight(138)
+        self.setFixedHeight(70)
         self.vBoxLayout.setSpacing(0)
         self.vBoxLayout.setContentsMargins(36, 22, 36, 12)
-        self.vBoxLayout.addWidget(self.titleLabel)
-        self.vBoxLayout.addSpacing(4)
-        self.vBoxLayout.addWidget(self.subtitleLabel)
         self.vBoxLayout.addSpacing(4)
         self.vBoxLayout.addLayout(self.buttonLayout, 1)
         self.vBoxLayout.setAlignment(Qt.AlignTop)
@@ -52,9 +47,6 @@ class ToolBar(QWidget):
         self.themeButton.setToolTip(self.tr('Toggle theme'))
         self.feedbackButton.setToolTip(self.tr('Send feedback'))
 
-        self.titleLabel.setObjectName('titleLabel')
-        self.subtitleLabel.setObjectName('subtitleLabel')
-
         self.themeButton.clicked.connect(self.toggleTheme)
         self.documentButton.clicked.connect(
             lambda: QDesktopServices.openUrl(QUrl(HELP_URL)))
@@ -64,6 +56,23 @@ class ToolBar(QWidget):
     def toggleTheme(self):
         theme = Theme.LIGHT if isDarkTheme() else Theme.DARK
         cfg.set(cfg.themeMode, theme)
+    
+    '''鼠标点击移动ToolBar
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.__isMouseDown = True
+            self.__mousePos = event.globalPos() - self.pos()
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        if self.__isMouseDown:
+            self.move(event.globalPos() - self.__mousePos)
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        self.__isMouseDown = False
+        super().mouseReleaseEvent(event)
+    ''' 
 
 
 class ExampleCard(QWidget):
@@ -123,7 +132,7 @@ class ExampleCard(QWidget):
 class GalleryInterface(ScrollArea):
     """ Gallery interface """
 
-    def __init__(self, title: str, subtitle: str, parent=None):
+    def __init__(self, parent=None):
         """
         Parameters
         ----------
@@ -138,8 +147,13 @@ class GalleryInterface(ScrollArea):
         """
         super().__init__(parent=parent)
         self.view = QWidget(self)
-        self.toolBar = ToolBar(title, subtitle, self)
+        self.toolBar = ToolBar(self)
         self.vBoxLayout = QVBoxLayout(self.view)
+        
+        ''' 添加工具栏到布局中，随之滚动
+        self.vBoxLayout.addWidget(self.toolBar)
+        self.vBoxLayout.addSpacing(20)
+        '''
 
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setViewportMargins(0, self.toolBar.height(), 0, 0)

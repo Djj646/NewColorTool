@@ -1,4 +1,5 @@
 # coding:utf-8
+from PyQt5 import QtGui
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtWidgets import QWidget, QFileDialog, QLabel
 from PyQt5.QtGui import QPixmap, QImage
@@ -15,15 +16,14 @@ import threading
 
 class MainFuncInterface(GalleryInterface):
     """ 主要功能区 """
-    # 开始信号
+    # 完成信号
     finishSignal = pyqtSignal(str)
     def __init__(self, parent=None):
         super().__init__(
-            title="主功能区",
-            subtitle='图片自定义规则色彩分析',
             parent=parent
         )
         self.colorTool = ColorTool()
+        self.pix = None
         self.imgLabel = PixmapLabel(self)
         self.resultLabels = []
         self.resultWidget = QWidget(self)
@@ -32,6 +32,17 @@ class MainFuncInterface(GalleryInterface):
         
         # 加载图片
         self.loadImg()
+        
+        # 定义 QPixmap 缓存
+        self.pixmap_cache = QtGui.QPixmapCache()
+        
+        # 设置缩放滑动条
+        self.slider = Slider(Qt.Horizontal, self)
+        self.slider.setRange(0, 520)
+        self.slider.setValue(260)
+        self.vBoxLayout.addWidget(self.slider)
+        # 连接 Slider 控件的 valueChanged 信号到缩放槽函数
+        self.slider.valueChanged.connect(self.scaleImage)
 
         card = self.addExampleCard(
             self.tr('图片视窗'),
@@ -76,6 +87,7 @@ class MainFuncInterface(GalleryInterface):
         )
         
         self.spinBox = SpinBox(self)
+        self.spinBox.setValue(self.colorTool.color_num)
         self.addExampleCard(
             self.tr("颜色数量"),
             self.spinBox
@@ -91,6 +103,41 @@ class MainFuncInterface(GalleryInterface):
         )
         
         self.initConnect()
+    
+    # 缩放图像
+    def scaleImage(self, value):
+        if self.pix == None:
+            return
+        # 计算缩放比例
+        scale = value / 260.0
+        
+        # 计算缩放后的图片宽度
+        scaled_width = self.pix.width() * scale
+
+        # 根据窗口宽度和缩放比例计算缩放上下限
+        min_width = self.view.width() * 0.1
+        max_width = self.view.width() * 0.88
+
+        # 根据缩放上下限对缩放比例进行调整
+        if scaled_width < min_width:
+            scale = min_width / self.pix.width()
+        elif scaled_width > max_width:
+            scale = max_width / self.pix.width()
+
+        # 构建缓存标识符
+        cache_id = "scaled_pix_{:.2f}".format(scale)
+
+        # 尝试从缓存中获取已缓存的图像
+        cached_pixmap = self.pixmap_cache.find(cache_id)
+        
+        if cached_pixmap is None:
+            scaled_pix = self.pix.scaledToWidth(int(self.pix.width() * scale), Qt.SmoothTransformation)
+            self.pixmap_cache.insert(cache_id, scaled_pix)
+        else:
+            scaled_pix = cached_pixmap
+        
+        # 设置缩放后的图像
+        self.imgLabel.setPixmap(scaled_pix)
     
     # 子线程开启
     def thread(self, func, args):
@@ -144,26 +191,28 @@ class MainFuncInterface(GalleryInterface):
         self.loadImg()
     
     def onStateButtonClicked(self):
+        if self.colorTool.path == None:
+            return
         if self.stateTooltip:
             if self.order == 'analysising':
                 self.stateTooltip.setTitle(self.tr('中止分析'))
                 self.stateTooltip.setContent(
-                    self.tr('分析已终止') + '🤒')
+                    self.tr('分析已终止') + '🤐')
                 self.button2.setText(self.tr('开始分析'))
                 self.stateTooltip.setState(True)
                 self.stateTooltip = None
             elif self.order == 'finish':
                 self.stateTooltip.setTitle(self.tr('完成分析'))
                 self.stateTooltip.setContent(
-                    self.tr('分析已完成') + '🥳')
+                    self.tr('分析已完成') + '😎')
                 self.button2.setText(self.tr('开始分析'))
                 self.stateTooltip.setState(True)
+                self.updateResultLabels()
                 # 消除状态框
                 self.stateTooltip = None
-                self.updateResultLabels()
         else:
             self.stateTooltip = StateToolTip(
-                self.tr('正在分析'), self.tr('请稍等片刻')+'😋', self.window())
+                self.tr('正在分析'), self.tr('请稍等片刻')+'🧐', self.window())
             self.button2.setText(self.tr('停止分析'))
             self.stateTooltip.move(self.stateTooltip.getSuitablePos())
             self.stateTooltip.show()
@@ -176,6 +225,8 @@ class MainFuncInterface(GalleryInterface):
     
     @staticmethod
     def start(self):
+        if self.colorTool.path == None:
+            return
         self.loadImg() # 包括ColorTool.loadImg
         self.colorTool.img2list()
         self.colorTool.sort()
@@ -227,11 +278,11 @@ class MainFuncInterface(GalleryInterface):
         if not self.colorTool.loadImg():
             return
         
-        pix = self.img2pix(self.colorTool.ori_img)
+        self.pix = self.img2pix(self.colorTool.ori_img)
         
         # 保持缩放比和平滑无锯齿
-        self.imgLabel.setPixmap(pix.scaled(
-            520, 1080, Qt.KeepAspectRatio, Qt.SmoothTransformation
+        self.imgLabel.setPixmap(self.pix.scaled(
+            800, 1880, Qt.KeepAspectRatio, Qt.SmoothTransformation
         ))
     
     @staticmethod

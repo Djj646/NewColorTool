@@ -14,7 +14,7 @@ class ColorTool():
         self.sort_method = 0 # 聚类方法, kmeans, 高斯混合, DBSCAN
         self.queue_method = 0 # 排序依据, H, S, V
         
-        self.color_num = 10 # 颜色数量
+        self.color_num = 1 # 颜色数量
         self.rawcolorlist = None # 暂存的分类好的颜色(未排序)
         # 排序好的颜色列表
         self.colorlist = np.array([

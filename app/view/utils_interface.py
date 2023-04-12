@@ -1,5 +1,5 @@
 # coding:utf-8
-from qfluentwidgets import (PushButton, MessageBox)
+from qfluentwidgets import (PushButton, SpinBox, MessageBox, TextWrap)
 
 from .gallery_interface import GalleryInterface
 from .mainfunc_interface import MainFuncInterface
@@ -9,8 +9,6 @@ class UtilsInterface(GalleryInterface):
     
     def __init__(self, parent=None):
         super().__init__(
-            title="附加功能区",
-            subtitle='其他功能',
             parent=parent
         )
         
@@ -32,7 +30,7 @@ class UtilsInterface(GalleryInterface):
     def showMessageDialog(self):
         title = self.tr('导出自定义')
         content = self.tr(
-            "这是一个遮罩对话框")
+            "功能暂未开放，敬请期待！")
         w = MessageBox(title, content, self.window())
         if w.exec():
             print('Yes button is pressed')
