@@ -31,11 +31,12 @@ class Config(QConfig):
 YEAR = 2023
 AUTHOR = "Jiajun Dong"
 VERSION = "v0.1.0"
-HELP_URL = "https://pyqt-fluent-widgets.readthedocs.io"
-REPO_URL = "https://github.com/zhiyiYo/PyQt-Fluent-Widgets"
-EXAMPLE_URL = "https://github.com/zhiyiYo/PyQt-Fluent-Widgets/tree/master/examples"
-FEEDBACK_URL = "https://github.com/zhiyiYo/PyQt-Fluent-Widgets/issues"
-RELEASE_URL = "https://github.com/zhiyiYo/PyQt-Fluent-Widgets/releases/latest"
+HELP_URL = "https://github.com/Djj646/NewColorTool/blob/main/ColorTool.md"
+REPO_URL = "https://github.com/Djj646/NewColorTool"
+EXAMPLE_URL = "https://github.com/Djj646/NewColorTool/blob/main/Examples.md"
+SAISOMETHING_URL = "https://github.com/Djj646/NewColorTool/blob/main/SaySomething.md"
+FEEDBACK_URL = "https://github.com/Djj646/NewColorTool/issues"
+RELEASE_URL = "https://github.com/Djj646/NewColorTool/releases/latest"
 
 
 cfg = Config()
