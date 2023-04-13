@@ -162,6 +162,7 @@ class SettingInterface(ScrollArea):
             self, self.tr("选择输出文件夹"), "./")
         if not folder or cfg.get(cfg.outputFolder) == folder:
             return
+        self.outputFolderChanged.emit(folder)
 
         cfg.set(cfg.outputFolder, folder)
         self.outputFolderCard.setContent(folder)

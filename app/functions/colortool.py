@@ -1,5 +1,7 @@
 import cv2
 import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.colors import hsv_to_rgb
 
 from .coloranalysis import kmeans, dbscan, gaussi
 
@@ -25,11 +27,6 @@ class ColorTool():
             [79, 148, 205],
             [205, 150, 205],
             [0, 255, 0],
-            [237, 173, 158],
-            [140, 199, 181],
-            [120, 205, 205],
-            [79, 148, 205],
-            [205, 150, 205]
         ])
 
     def loadImg(self):
@@ -110,3 +107,31 @@ class ColorTool():
         list = rawcolorlist[:, index] # 排序好后的形状为[1, colors, 3]
         self.colorlist = list.reshape(-1, 3) # 形状整理为[colors, 3]
     
+    def histDraw(self):
+        # 设置窗口子图像高度比例
+        fig, axes = plt.subplots(nrows=3, ncols=1, figsize=(8, 6), sharex=True, gridspec_kw={'height_ratios': [1, 1, 2]})
+
+        # 绘制 H 通道直方图分布曲线
+        axes[0].hist(self.ori_img_hsv[:, :, 0].ravel(), bins=180, range=[0, 180], density=True)
+        axes[0].set_title('H Channel')
+        axes[0].set_xticks(range(0,180,15))
+
+        # 绘制 S 通道直方图分布曲线
+        axes[1].hist(self.ori_img_hsv[:, :, 1].ravel(), bins=256, density=True)
+        axes[1].set_title('S Channel')
+        axes[0].set_xticks(range(0,256,15))
+
+        # 绘制 V 通道直方图分布曲线
+        axes[2].hist(self.ori_img_hsv[:, :, 2].ravel(), bins=256, density=True)
+        axes[2].set_title('V Channel')
+        axes[0].set_xticks(range(0,256,15))
+
+        # 调整子图像之间的距离
+        plt.subplots_adjust(hspace=0.5)
+        
+        # 在整个图表上添加标题
+        fig.suptitle('HSV Channel Histogram Distribution')
+
+        
+        # 显示窗口
+        plt.show()

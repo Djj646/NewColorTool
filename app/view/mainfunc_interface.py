@@ -4,7 +4,7 @@ from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtWidgets import QWidget, QFileDialog, QLabel
 from PyQt5.QtGui import QPixmap, QImage
 from qfluentwidgets import (ScrollArea, StateToolTip, FlowLayout, PushButton, SpinBox, ToolTipFilter, ToolButton, PrimaryPushButton, HyperlinkButton,
-                            ComboBox, PixmapLabel, RadioButton, CheckBox, Slider, SwitchButton)
+                            ComboBox, PixmapLabel, RadioButton, CheckBox, Slider, SwitchButton, MessageBox)
 
 from .gallery_interface import GalleryInterface
 from ..functions.colortool import ColorTool
@@ -13,6 +13,7 @@ from ..common.config import cfg
 import cv2
 import numpy as np
 import threading
+import os
 
 class MainFuncInterface(GalleryInterface):
     """ 主要功能区 """
@@ -102,6 +103,12 @@ class MainFuncInterface(GalleryInterface):
             self.comboBox3
         )
         
+        # 输出文件夹
+        self.outputFolder = "./app/output"
+        
+        # 输出格式
+        self.editReal = [52, 124, 0]
+        
         self.initConnect()
     
     # 缩放图像
@@ -156,7 +163,6 @@ class MainFuncInterface(GalleryInterface):
         self.spinBox.valueChanged.connect(self.onColornumChanege)
         
         self.finishSignal.connect(self.setButton1Order)
-        
     
     # 清空widget，并添加列表内多个组件
     # 采用create返回的方法会导致布局消失
@@ -191,8 +197,6 @@ class MainFuncInterface(GalleryInterface):
         self.loadImg()
     
     def onStateButtonClicked(self):
-        if self.colorTool.path == None:
-            return
         if self.stateTooltip:
             if self.order == 'analysising':
                 self.stateTooltip.setTitle(self.tr('中止分析'))
@@ -211,22 +215,29 @@ class MainFuncInterface(GalleryInterface):
                 # 消除状态框
                 self.stateTooltip = None
         else:
+            if self.colorTool.path == None:
+                title = self.tr('温馨提示')
+                content = self.tr("请先导入图片再执行其他操作")
+                w = MessageBox(title, content, self.window())
+                if w.exec():
+                    self.onOpenButtonClicked()
+                    return
+                else:
+                    return
+            self.order = 'analysising'
+            # self.order = 'finish'
+            self.onStart()
             self.stateTooltip = StateToolTip(
                 self.tr('正在分析'), self.tr('请稍等片刻')+'🧐', self.window())
             self.button2.setText(self.tr('停止分析'))
             self.stateTooltip.move(self.stateTooltip.getSuitablePos())
             self.stateTooltip.show()
-            self.order = 'analysising'
-            # self.order = 'finish'
-            self.onStart()
     
     def onStart(self):
         self.thread(func=self.start, args=[self])
     
     @staticmethod
     def start(self):
-        if self.colorTool.path == None:
-            return
         self.loadImg() # 包括ColorTool.loadImg
         self.colorTool.img2list()
         self.colorTool.sort()
@@ -280,22 +291,21 @@ class MainFuncInterface(GalleryInterface):
         
         self.pix = self.img2pix(self.colorTool.ori_img)
         
+        w = int(min(self.pix.width(),self.view.width()*0.88))
+        h = self.pix.height()
+        
+        value = min(w/self.pix.width()*260, 520)
+        self.slider.setValue(int(value))
+        
         # 保持缩放比和平滑无锯齿
         self.imgLabel.setPixmap(self.pix.scaled(
-            800, 1880, Qt.KeepAspectRatio, Qt.SmoothTransformation
+            w, h, Qt.KeepAspectRatio, Qt.SmoothTransformation
         ))
     
     @staticmethod
     def clearWidget(widget):
         layout = widget.layout()
         if layout:
-            # 常规移除报错
-            # for i in range(layout.count()):
-            #     item_to_remove = layout.itemAt(i)
-            #     widget_to_remove = item_to_remove.widget()
-            #     if widget_to_remove is not None:
-            #         layout.removeWidget(widget_to_remove)
-            #     del widget_to_remove
             layout.takeAllWidgets()
     
     def updateResultLabels(self):
@@ -318,4 +328,45 @@ class MainFuncInterface(GalleryInterface):
             self.resultLabels.append(label)
 
         self.attachWidget(self.resultWidget, self.resultLabels, True)
+        
+    def onOutputFolderChange(self, path):
+        self.outputFolder = path
+        
+    def onSave(self):
+        filepath = os.path.basename(self.colorTool.path)  # 提取文件名
+        filetitle, ext = os.path.splitext(filepath)  # 分离文件名和扩展名
+        outputpath = self.outputFolder
+        
+        # 清除上一次导出的
+        # 列出路径下的所有文件名
+        files = os.listdir(outputpath)
+        # 遍历所有文件名
+        for filename in files:
+            if filename.startswith(filetitle):
+                # 如果文件名以filetitle开头，则删除该文件
+                os.remove(os.path.join(outputpath, filename))
+        
+        colorlist = self.colorTool.colorlist
+        [h, w, span] = self.editReal
+        spanimg = np.full((h, span, 3), fill_value=255, dtype=np.uint8)
+        totalimg = None
+        
+        for i, color in enumerate(colorlist):
+            color = tuple(int(x) for x in color)
+            # 创建并保存单个图片
+            singleimg = np.full((h, w, 3), color, dtype=np.uint8)
+            singleimg = cv2.cvtColor(singleimg, cv2.COLOR_BGR2RGB)
+            name = filetitle + '_rgb_{}_{}_{}'.format(*color)
+            cv2.imwrite(os.path.join(outputpath, name + '.png'), singleimg)
+            # 将单个图片拼接到大图像中
+            if i == 0:
+                totalimg = singleimg
+            else:
+                totalimg = cv2.hconcat([totalimg, spanimg, singleimg])
+        # 将大图像保存到磁盘
+        cv2.imwrite(os.path.join(outputpath, filetitle+"_CARD.png"), totalimg)
+        
+    def onPltDraw(self):
+        if self.colorTool.ori_img_hsv is not None:
+            self.colorTool.histDraw()
         

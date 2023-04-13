@@ -87,6 +87,14 @@ class MainWindow(FramelessWindow):
 
         self.initWindow()
         
+        # 信号连接
+        self.initConnect()
+        
+    def initConnect(self):
+        self.settingInterface.outputFolderChanged.connect(self.mainfuncInterface.onOutputFolderChange)
+        self.utilsInterface.saveSignal.connect(self.mainfuncInterface.onSave)
+        self.utilsInterface.drawSignal.connect(self.mainfuncInterface.onPltDraw)
+    
     def initLayout(self):
         self.hBoxLayout.setSpacing(0)
         self.hBoxLayout.setContentsMargins(0, 0, 0, 0)
